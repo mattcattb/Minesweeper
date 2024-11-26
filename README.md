@@ -1,13 +1,10 @@
 # Minesweeper - Fall 2023 Project
 
-### **Name**: Matthew Boughton  
-### **Section**: 11947  
-### **UFL Email**: m.boughton@ufl.edu  
-### **System**: Ubuntu 22.04.2 LTS  
-### **Compiler**: 11.4.0  
-### **SFML Version**: 2.5.1+dfsg-2  
-### **IDE**: VSCode  
-### **Other Notes**: I used `sudo apt-get install libsfml-dev` to install SFML  
+##### **Name**: Matthew Boughton  
+##### **System**: Ubuntu 22.04.2 LTS  
+##### **Compiler**: 11.4.0  
+##### **SFML Version**: 2.5.1+dfsg-2  
+##### **IDE**: VSCode  
 
 ---
 
