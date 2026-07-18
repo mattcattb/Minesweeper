@@ -1,4 +1,4 @@
-#include "Leaderboard_Window.h"
+#include "client/Leaderboard_Window.h"
 
 // ====== Initialization ======
 
@@ -45,7 +45,7 @@ void Leaderboard_Window::init_title(){
 void Leaderboard_Window::set_leaderboard_text(){
     // setup leaderboard text based on leaderboard scores
 
-    int i = 0;
+    std::size_t i = 0;
 
     std::string leaderboard_string = "";
 
@@ -128,7 +128,7 @@ bool Leaderboard_Window::has_score(std::string username, int min, int sec){
     // boolean for if score is scored already in vector
     Score temp_score(username, min, sec);
 
-    for(int i = 0; i < _scores_leaderboard.size(); i += 1){
+    for(std::size_t i = 0; i < _scores_leaderboard.size(); i += 1){
         if (scores_are_same(temp_score, _scores_leaderboard[i])){
             
             // if score are the same, leaderboard already has this score
@@ -227,7 +227,7 @@ void Leaderboard_Window::write_leaderboard(){
         std::cout << "Failed to open!" << std::endl;
     }
 
-    for(int i = 0; i < _scores_leaderboard.size(); i += 1){
+    for(std::size_t i = 0; i < _scores_leaderboard.size(); i += 1){
         
         std::string cur_line = _scores_leaderboard[i].get_line_string();
         out_file << cur_line;
@@ -238,7 +238,7 @@ void Leaderboard_Window::write_leaderboard(){
 }
 
 void Leaderboard_Window::print_scores(){
-    for (int i = 0; i < _scores_leaderboard.size(); i += 1){
+    for (std::size_t i = 0; i < _scores_leaderboard.size(); i += 1){
         _scores_leaderboard[i].print();
     }
 }
@@ -267,4 +267,3 @@ void Leaderboard_Window::add_score(std::string name, int min, int sec){
 
     set_leaderboard_text();
 }
-

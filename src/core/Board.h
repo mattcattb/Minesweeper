@@ -1,10 +1,8 @@
 #pragma once
-#include <vector>
-#include <SFML/Graphics.hpp>
 #include <random>
+#include <vector>
 
-#include "Tile.h"
-#include "Texture_Manager.h"
+#include "core/Tile.h"
 
 
 //Todo
@@ -24,8 +22,6 @@ class Board{
 
     std::vector<std::vector<Tile>> tile_vector; // tile_vector[row][col]
 
-    Texture_Manager * texture_manager;
-
     // initialize board and place mines
     void create_empty_board();
     void randomize_mines(int mines);
@@ -36,14 +32,22 @@ class Board{
 
 public:
 
-    Board(int rows, int cols, int mines, Texture_Manager *manager);
+    Board(int rows, int cols, int mines);
+    Board(const Board&) = delete;
+    Board& operator=(const Board&) = delete;
+    Board(Board&&) = delete;
+    Board& operator=(Board&&) = delete;
     
-    // update each tiles states based on mouse_position
-    void update_board(sf::Vector2i mouse_pos, bool left_click);
+    // update a tile based on its board coordinates
+    void update_board(int row, int col, bool left_click);
 
     // get information on board
-    int board_state(); // says if board lost, won, or neither
-    int get_counter(){return counter;}; // get board counter
+    int board_state() const; // says if board lost, won, or neither
+    int get_counter() const {return counter;}; // get board counter
+    int rows() const {return _rows;};
+    int cols() const {return _cols;};
+    bool contains(int row, int col) const;
+    const Tile& tile_at(int row, int col) const {return tile_vector[row][col];};
 
     // change board state
     void reveal_all(); // set every tile to revealed
@@ -53,15 +57,7 @@ public:
 
     void flag_all_mines();
 
-    void mask(); // adds empty tile
-    void unmask(); // removes empty tile
-
-    void toggle_debug_state(); // toggles debug state for each tile
-    // draw board
-    void draw_tiles(sf::RenderWindow &window); // draw each tile in board
-
     // debugging
     void print_board(); // print all tiles in board
 
 };
-

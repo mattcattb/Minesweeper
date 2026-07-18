@@ -1,4 +1,4 @@
-#include "Welcome_Window.h"
+#include "client/Welcome_Window.h"
 
 
 Welcome_Window::Welcome_Window(int rows, int cols){

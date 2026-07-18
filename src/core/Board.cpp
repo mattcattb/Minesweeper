@@ -1,6 +1,12 @@
-#include "Board.h"
+#include "core/Board.h"
 
-Board::Board(int rows, int cols, int mines, Texture_Manager *manager){
+#include <stdexcept>
+
+Board::Board(int rows, int cols, int mines){
+    if (rows <= 0 || cols <= 0 || mines < 0 || mines >= rows * cols) {
+        throw std::invalid_argument("Invalid board dimensions or mine count");
+    }
+
     // now need to go through each tile and set its neighbors array, and if its a pointer or not
     
     // create mineless board 
@@ -9,8 +15,6 @@ Board::Board(int rows, int cols, int mines, Texture_Manager *manager){
     _mines = mines;
     counter = mines;
     _state = 0; // -1: defeat, 0 still playing, 1: victory
-
-    texture_manager = manager;
 
     // set 2D vector of tiles (no mines) 
     create_empty_board();
@@ -37,7 +41,7 @@ void Board::create_empty_board(){
     for(int r = 0; r < _rows; r += 1){
         for(int c = 0; c < _cols; c += 1){
             // initially set all times to no mine
-            tile_vector[r].push_back(Tile(r, c, texture_manager));
+            tile_vector[r].push_back(Tile(r, c));
         }
     } 
 }
@@ -79,9 +83,13 @@ void Board::set_board_neighbors(){
 
 // getters 
 
-int Board::board_state(){ 
+int Board::board_state() const{
     // returns the boards stored state
     return _state;
+}
+
+bool Board::contains(int row, int col) const{
+    return row >= 0 && row < _rows && col >= 0 && col < _cols;
 }
 
 
@@ -92,7 +100,6 @@ void Board::reveal_all(){
     for(int row = 0; row < _rows; row += 1){
         for(int col = 0; col < _cols; col += 1){
             tile_vector[row][col].reveal();
-            tile_vector[row][col].set_loader();
         }
     }
 
@@ -104,19 +111,6 @@ void Board::reveal_mines(){
         for (int c = 0; c < _cols; c += 1){
             if (tile_vector[r][c].is_mine()){
                 tile_vector[r][c].reveal(); // add mine 
-                tile_vector[r][c].set_loader();
-            }
-        }
-    }
-}
-
-void Board::toggle_debug_state(){
-    // set all tiles to debug mode
-    for(int r = 0; r < _rows; r += 1){
-        for (int c = 0; c < _cols; c += 1){
-            if (tile_vector[r][c].is_mine()){
-                tile_vector[r][c].toggle_debug();
-                tile_vector[r][c].set_loader();
             }
         }
     }
@@ -129,7 +123,6 @@ void Board::hide_mines(){
         for (int c = 0; c < _cols; c += 1){
             if (tile_vector[r][c].is_mine()){
                 tile_vector[r][c].hide();
-                tile_vector[r][c].set_loader();
             }
         }
     }
@@ -146,47 +139,17 @@ void Board::reset_board(){
     set_board_neighbors();
 } 
 
-void Board::mask(){ 
-    // adds empty tile to each tile
-    for(int r = 0; r < _rows; r += 1){
-        for(int c = 0; c < _cols; c += 1){
-            tile_vector[r][c].mask();
-        }
-    }
-}
-
-void Board::unmask(){ 
-    // removes empty tile mask
-    for(int r = 0; r < _rows; r += 1){
-        for(int c = 0; c < _cols; c += 1){
-            tile_vector[r][c].unmask();
-        }
-    }
-}
-
-void Board::draw_tiles(sf::RenderWindow &window){ 
-    // draw each tile in board
-
-    for(int row = 0; row < _rows; row += 1){
-        for(int col = 0; col < _cols; col += 1){
-            // draw tile!
-            tile_vector[row][col].draw(window);
-
-        }
-    }
-}
-
-void Board::update_board(sf::Vector2i mouse_pos, bool left_click){
+void Board::update_board(int row, int col, bool left_click){
     // determine if game state is changed by these updates!
-    
-    // updates board with mouse position and left/right click
-    int col_clicked = mouse_pos.x/32;
-    int row_clicked = mouse_pos.y/32;
+
+    if (!contains(row, col) || _state != 0){
+        return;
+    }
 
     if (left_click){
         // left click: reveal
 
-        int temp_state = tile_vector[row_clicked][col_clicked].left_click();
+        int temp_state = tile_vector[row][col].left_click();
         
         // if temp state is -1, a mine was clicked on
         if(temp_state == -1){
@@ -196,7 +159,7 @@ void Board::update_board(sf::Vector2i mouse_pos, bool left_click){
 
     }else{
         // right click: place/remove flag and also change counter
-        counter -= tile_vector[row_clicked][col_clicked].right_click();
+        counter -= tile_vector[row][col].right_click();
     }
 
     // check if game won (all non-mines revealed)
@@ -212,7 +175,6 @@ void Board::flag_all_mines(){
         for(int c = 0; c < _cols; c += 1){
             if(tile_vector[r][c].is_mine() && !tile_vector[r][c].flag_placed()){
                 tile_vector[r][c].place_flag();
-                tile_vector[r][c].set_loader();
             }
         }
     }

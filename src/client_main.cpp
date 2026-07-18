@@ -3,10 +3,8 @@
 #include <string>
 #include <vector>
 
-#include "Welcome_Window.h"
-#include "Game_Window.h"
-#include "Texture_Manager.h"
-#include "Leaderboard_Window.h"
+#include "client/Game_Window.h"
+#include "client/Welcome_Window.h"
 
 /* CHECKLIST
 
@@ -31,7 +29,7 @@
 
 void read_config(int &cols, int &rows, int &mines);
 
-int main(int argc, char ** argv){
+int main(){
 
     int cols, rows, mines;
     read_config(rows, cols, mines); // read in config info from file 
@@ -73,4 +71,3 @@ void read_config(int &rows, int &cols, int &mines){
     mines = stoi(buffer);
 
 }
-

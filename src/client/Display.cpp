@@ -1,4 +1,4 @@
-#include "Display.h"
+#include "client/Display.h"
 
 Display::Display(int digits, int x, int y, sf::Texture * digits_texture, bool n){
     

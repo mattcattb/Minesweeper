@@ -1,13 +1,9 @@
-#include "Tile.h"
+#include "core/Tile.h"
 
-Tile::Tile(int row, int col, Texture_Manager *manager){
+Tile::Tile(int row, int col){
 
     init_variables(row, col); // init tiles variables
     set_neighbors_null(); // set all neighbors to nullptr first
-    texture_manager = manager; // set texture manager
-
-    // set sprite loader as a hidden sprite only
-    add_sprite("tile_hidden");
 
 }
 
@@ -19,17 +15,11 @@ void Tile::init_variables(int row, int col){
     _row = row;
     _col = col;
 
-    _is_debugging = false;
-
     _is_mine = false;
     
     // set variables
     _revealed = false;
     _has_flag = false;
-
-    // find the x and y position of tile 
-    _xpos = 32*(_col);
-    _ypos = 32*(_row);
 
 }
 
@@ -42,7 +32,7 @@ void Tile::set_neighbors_null(){
 
 // ============ information getters
 
-int Tile::get_adjacent_mines(){
+int Tile::get_adjacent_mines() const{
     // returns number of hidden mines by cycling through neighbords
     int num_adjacent = 0;
 
@@ -89,130 +79,12 @@ void Tile::setup_neighbors(std::vector<std::vector<Tile>> &board){
     }
 }
 
-// ============ sprite loading
-
-void Tile::set_loader(){
-    // setup sprite loader vector according to state
-
-    // first, clear previous sprite loader
-    sprite_loader.clear(); 
-
-    // store tile position on board
-    sf::Vector2f tile_position(_xpos, _ypos);
-
-    if (!_revealed){
-        // if hidden, just add a hidden tile sprite (and flag if needed) 
-        add_sprite("tile_hidden");
-        
-        if (_has_flag){
-            // if tile has a flag, also add this flag on top too
-            add_sprite("flag");
-        }
-        // also add mine on top of flag if in debug mode
-        if (_is_debugging && _is_mine){
-            add_sprite("mine");
-        }
-        
-        // finished adding all, leave
-        return;
-
-    }else if (_revealed){
-        // if revealed, add a shown tile
-        add_sprite("tile_revealed");
-    }
-    
-    if (_has_flag){
-        add_sprite("flag");
-    }
-
-    if (_is_mine){
-        // put a mine on top!
-        add_sprite("mine");
-
-    }else {
-        // tile is not a mine, so must display its number. 
-        int neighbors = get_adjacent_mines();
-        
-        switch (neighbors)
-        {
-        case 1:
-            /* code */
-            add_sprite("number_1");
-            break;
-        case 2:
-            add_sprite("number_2");
-            break;
-
-        case 3:
-            add_sprite("number_3");
-            break;
-
-        case 4:
-            add_sprite("number_4");
-            break;
-
-        case 5:
-            add_sprite("number_5");
-            break;
-
-        case 6:
-            add_sprite("number_6");
-            break;
-
-        case 7:
-            add_sprite("number_7");
-            break;
-
-        case 8:
-            add_sprite("number_8");
-            break;
-
-        default:
-            break;
-        }
-
-    }
-
-}
-
-void Tile::draw(sf::RenderWindow &window){
-    // draw each sprite in sprite_loader
-    for(int i = 0; i < sprite_loader.size(); i += 1){
-        
-        window.draw(sprite_loader[i]);
-    }
-
-}
-
-//todo maybe optimize this?
-void Tile::mask(){
-    // add a revealed tile texture on top 
-    add_sprite("tile_revealed");
-}
-
-//todo maybe optimize this as well?
-void Tile::unmask(){
-    // remove revealed tile texture on top
-    sprite_loader.pop_back();
-}
-
-// ============ helpers I guess
-
-void Tile::add_sprite(std::string texture_name){
-    // creates and adds sprite to sprite_loader, setting position 
-    sf::Sprite new_sprite;
-    new_sprite.setTexture(texture_manager->getTexture(texture_name));
-    new_sprite.setPosition(sf::Vector2f(_xpos, _ypos)); 
-    sprite_loader.push_back(new_sprite);
-}
-
 // ============ debugging
 
 void Tile::print_tile(){
     std::cout << std::endl;
     std::cout << "revealed: " << _revealed << " is_mine: " << _is_mine << " has_flag: " << _has_flag << std::endl;
     std::cout << "_row, _col: (" << _row << ", " << _col << ")\n";
-    std::cout << "_xpos, _ypos: (" << _xpos << ", " << _ypos << ")\n";   
     std::cout << "neighbor mines: " << get_adjacent_mines() << std::endl; 
     std::cout << std::endl;
 }
@@ -284,9 +156,6 @@ int Tile::right_click(){
     }
     _has_flag = !_has_flag;
 
-    // set the loader of clicked tile
-    set_loader();
-
     return return_val;
 }
 
@@ -301,7 +170,6 @@ void Tile::reveal(){
     // set tile state to reveal and remove flag
     _has_flag = false;
     _revealed = true; 
-    set_loader();
 } 
 
 void Tile::hide(){
