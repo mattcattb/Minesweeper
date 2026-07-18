@@ -1,12 +1,48 @@
+#include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <variant>
 
+#include "server/leaderboard.h"
 #include "server/server.h"
 
 namespace {
+
+std::string environment_value(const char* name, std::string fallback) {
+  const char* value = std::getenv(name);
+  return value != nullptr && value[0] != '\0' ? value : std::move(fallback);
+}
+
+bool initialize_leaderboard(const std::string& file_path) {
+  const std::filesystem::path path(file_path);
+  std::error_code error;
+  if (!path.parent_path().empty()) {
+    std::filesystem::create_directories(path.parent_path(), error);
+    if (error) {
+      std::cerr << "Unable to create leaderboard directory: "
+                << error.message() << '\n';
+      return false;
+    }
+  }
+
+  Leaderboard leaderboard(file_path);
+  if (std::filesystem::exists(path)) {
+    if (!leaderboard.load()) {
+      std::cerr << "Unable to load leaderboard from " << file_path << '\n';
+      return false;
+    }
+  } else if (!leaderboard.save()) {
+    std::cerr << "Unable to create leaderboard at " << file_path << '\n';
+    return false;
+  }
+
+  std::cout << "Leaderboard data: " << file_path << '\n';
+  return true;
+}
 
 void print_event(const ServerEvent& event) {
   std::visit([](const auto& value) {
@@ -36,7 +72,23 @@ void process_and_print(Server& server) {
 }  // namespace
 
 int main() {
+  const std::string data_directory = environment_value(
+      "MINESWEEPER_DATA_DIR", "files");
+  const std::string leaderboard_path = environment_value(
+      "MINESWEEPER_LEADERBOARD_PATH",
+      data_directory + "/leaderboard.csv");
+  if (!initialize_leaderboard(leaderboard_path)) {
+    return 1;
+  }
+
   Server server;
+
+  if (environment_value("MINESWEEPER_MODE", "cli") == "server") {
+    std::cout << "Minesweeper server event loop ready\n";
+    server.run();
+    return 0;
+  }
+
   unsigned long request_number = 1;
 
   server.enqueue(CreateGame{"default", "create-1", 16, 25, 50});
