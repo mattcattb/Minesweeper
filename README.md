@@ -112,6 +112,7 @@ The runtime reads these environment variables:
 
 ```text
 MINESWEEPER_MODE=server
+MINESWEEPER_PORT=7575
 MINESWEEPER_DATA_DIR=/data
 MINESWEEPER_LEADERBOARD_PATH=/data/leaderboard.csv
 ```
@@ -120,3 +121,9 @@ MINESWEEPER_LEADERBOARD_PATH=/data/leaderboard.csv
 unset, the runtime writes `leaderboard.csv` below `MINESWEEPER_DATA_DIR`. The
 directory is created on startup, and startup fails when the configured path is
 not writable.
+
+Server mode listens on `MINESWEEPER_PORT` using a private length-prefixed JSON
+protocol. Each frame starts with a four-byte unsigned big-endian payload length,
+followed by one UTF-8 JSON command. Socket I/O, partial frame buffering, command
+dispatch, and event serialization run in one `poll()` loop; game behavior stays
+inside the headless `Server` command queue.

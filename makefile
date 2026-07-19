@@ -5,6 +5,7 @@ CXXFLAGS := -std=c++17 -Wall -Wextra -pedantic
 CORE_SOURCES := $(wildcard src/core/*.cpp)
 CLIENT_SOURCES := $(wildcard src/client/*.cpp)
 SERVER_SOURCES := $(wildcard src/server/*.cpp)
+JSON_CFLAGS = $(shell pkg-config --cflags nlohmann_json)
 SFML_PREFIX = $(shell brew --prefix sfml@2 2>/dev/null)
 SFML_PKG_CONFIG_PATH = $(if $(SFML_PREFIX),$(SFML_PREFIX)/lib/pkgconfig,)
 SFML_CFLAGS = $(shell PKG_CONFIG_PATH="$(SFML_PKG_CONFIG_PATH):$$PKG_CONFIG_PATH" \
@@ -22,11 +23,11 @@ client:
 		$(SFML_LIBS) -o minesweeper-client
 
 server:
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) src/server_main.cpp $(CORE_SOURCES) $(SERVER_SOURCES) \
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(JSON_CFLAGS) src/server_main.cpp $(CORE_SOURCES) $(SERVER_SOURCES) \
 		-pthread -o minesweeper-server
 
 test:
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) tests/server_test.cpp $(CORE_SOURCES) $(SERVER_SOURCES) \
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(JSON_CFLAGS) tests/server_test.cpp $(CORE_SOURCES) $(SERVER_SOURCES) \
 		-pthread -o minesweeper-server-test
 	./minesweeper-server-test
 

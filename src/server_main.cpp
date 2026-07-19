@@ -9,6 +9,7 @@
 
 #include "server/leaderboard.h"
 #include "server/server.h"
+#include "server/socket_server.h"
 
 namespace {
 
@@ -84,9 +85,13 @@ int main() {
   Server server;
 
   if (environment_value("MINESWEEPER_MODE", "cli") == "server") {
-    std::cout << "Minesweeper server event loop ready\n";
-    server.run();
-    return 0;
+    const int port = std::stoi(environment_value("MINESWEEPER_PORT", "7575"));
+    if (port <= 0 || port > 65535) {
+      std::cerr << "MINESWEEPER_PORT must be between 1 and 65535\n";
+      return 1;
+    }
+    SocketServer socket_server(static_cast<std::uint16_t>(port));
+    return socket_server.run() ? 0 : 1;
   }
 
   unsigned long request_number = 1;

@@ -1,6 +1,6 @@
 FROM alpine:3.21 AS builder
 
-RUN apk add --no-cache g++ make
+RUN apk add --no-cache g++ make nlohmann-json
 
 WORKDIR /src
 COPY makefile ./makefile
@@ -17,14 +17,17 @@ RUN apk add --no-cache libstdc++ \
 COPY --from=builder /src/minesweeper-server /usr/local/bin/minesweeper-server
 
 ENV MINESWEEPER_MODE=server
+ENV MINESWEEPER_PORT=7575
 ENV MINESWEEPER_DATA_DIR=/data
 ENV MINESWEEPER_LEADERBOARD_PATH=/data/leaderboard.csv
 
 VOLUME ["/data"]
 
+EXPOSE 7575
+
 USER minesweeper
 
 HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
-  CMD ["sh", "-c", "kill -0 1"]
+  CMD ["nc", "-z", "127.0.0.1", "7575"]
 
 ENTRYPOINT ["/usr/local/bin/minesweeper-server"]
