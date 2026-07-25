@@ -16,7 +16,7 @@ See break my mindsweeper for a example implemnetaion of this! Includes a event l
 
 ---
 
-![game in action](/files/minesweeper.png)
+![game in action](assets/minesweeper.png)
 
 ## **Usage**
 
@@ -62,13 +62,30 @@ In the project directory, use the Makefile to compile the code:
 make build
 ```
 
-The code is split into three dependency layers:
+The project is organized by software responsibility:
 
 ```text
-src/core    Headless game rules and timing; no SFML or networking
-src/client  SFML input, windows, and rendering; depends on core
-src/server  Command queue, authoritative games, and public snapshots; depends on core
+src/game.*              deterministic rules and state
+src/runtime.*           commands, authoritative games, and public snapshots
+src/protocol.*          binary protocol v2 mapping
+src/binary_codec.hpp    private byte encoding primitives
+src/game_state_file.*   JSON checkpoint persistence
+src/tcp_server.*        TCP framing and connection lifecycle
+src/leaderboard.*       leaderboard persistence
+src/app/                desktop and server entry points
+src/ui/                 SFML-only windows and rendering
+tests/                  focused game, runtime, protocol, and persistence tests
+assets/                 fonts and images
+config/                 checked-in desktop defaults
+data/                   ignored mutable local state
 ```
+
+Headers stay beside their implementations under `src/` because this project
+does not publish a C++ library. The published integration boundary is the
+TypeScript SDK under `clients/typescript`.
+
+The planned append/replay persistence exercise is documented in
+[`docs/game-journal.md`](docs/game-journal.md).
 
 Build the graphical client or headless runtime separately:
 
@@ -81,31 +98,48 @@ make test
 ### **3. Run the Game**
 
 After building, if you would like to, edit the config file.
-Go to files/board_config.cfg to change each line associated with rows, cols, num_mines respectively.
+Edit `config/board.cfg` to change each line associated with rows, columns,
+and mine count respectively.
 
 Finally, run with
 
 ```bash
-./minesweeper-client
+./build/minesweeper-desktop
 ```
 
-The headless runtime currently exposes a small development command adapter:
+The headless runtime exposes a small development CLI when
+`MINESWEEPER_MODE=cli`:
 
 ```bash
-./minesweeper-server
+./build/minesweeper-server
 ```
 
-It accepts `reveal ROW COL`, `flag ROW COL`, `restart`, and `quit`. A WebSocket
-adapter can later parse network messages into the same `Command` queue without
-giving networking code direct access to game state.
+It accepts `reveal ROW COL`, `flag ROW COL`, `restart`, and `quit`. In server
+mode, `TcpServer` decodes framed commands and delegates them to `GameRuntime`;
+networking never receives direct access to the game map.
 
 ### Container and persistent data
 
 Build and run the headless runtime with a persistent data volume:
 
 ```bash
-docker build -t break-my-system/minesweeper .
-docker run --rm -v minesweeper-data:/data break-my-system/minesweeper
+docker build \
+  --build-arg VERSION=0.2.0 \
+  -t mattcattb/minesweeper:0.2.0 \
+  -t mattcattb/minesweeper:latest \
+  .
+docker run --rm -v minesweeper-data:/data mattcattb/minesweeper:latest
+```
+
+Publish the same version for AMD64 and ARM64:
+
+```bash
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  --build-arg VERSION=0.2.0 \
+  -t mattcattb/minesweeper:0.2.0 \
+  -t mattcattb/minesweeper:latest \
+  --push .
 ```
 
 The runtime reads these environment variables:
@@ -122,8 +156,20 @@ unset, the runtime writes `leaderboard.csv` below `MINESWEEPER_DATA_DIR`. The
 directory is created on startup, and startup fails when the configured path is
 not writable.
 
-Server mode listens on `MINESWEEPER_PORT` using a private length-prefixed JSON
-protocol. Each frame starts with a four-byte unsigned big-endian payload length,
-followed by one UTF-8 JSON command. Socket I/O, partial frame buffering, command
-dispatch, and event serialization run in one `poll()` loop; game behavior stays
-inside the headless `Server` command queue.
+Server mode listens on `MINESWEEPER_PORT` using protocol version 2. Each frame
+starts with a four-byte unsigned big-endian payload length, and both request and
+response payloads use the binary representation in
+[`docs/protocol-v2.md`](docs/protocol-v2.md). Socket I/O, partial frame
+buffering, command dispatch, and event serialization run in one `poll()` loop;
+game behavior stays inside the headless `GameRuntime`.
+
+The server-side TypeScript client lives in `clients/typescript`. It can be
+developed as a Bun workspace dependency from the Break My System repository or
+built and published independently:
+
+```bash
+cd clients/typescript
+bun install
+bun test
+bun run build
+```

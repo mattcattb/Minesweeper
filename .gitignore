@@ -1,0 +1,7 @@
+build/
+data/*
+!data/.gitkeep
+
+clients/typescript/dist/
+clients/typescript/node_modules/
+clients/typescript/*.tgz

@@ -2,9 +2,23 @@ CXX ?= c++
 CPPFLAGS := -Isrc
 CXXFLAGS := -std=c++17 -Wall -Wextra -pedantic
 
-CORE_SOURCES := $(wildcard src/core/*.cpp)
-CLIENT_SOURCES := $(wildcard src/client/*.cpp)
-SERVER_SOURCES := $(wildcard src/server/*.cpp)
+BUILD_DIR := build
+GAME_SOURCES := src/game.cpp
+RUNTIME_SOURCES := \
+	$(GAME_SOURCES) \
+	src/game_state_file.cpp \
+	src/runtime.cpp
+SERVER_SOURCES := \
+	$(RUNTIME_SOURCES) \
+	src/leaderboard.cpp \
+	src/protocol.cpp \
+	src/tcp_server.cpp
+UI_SOURCES := $(wildcard src/ui/*.cpp)
+TEST_BINARIES := \
+	$(BUILD_DIR)/tests/game_test \
+	$(BUILD_DIR)/tests/game_state_file_test \
+	$(BUILD_DIR)/tests/protocol_test \
+	$(BUILD_DIR)/tests/runtime_test
 JSON_CFLAGS = $(shell pkg-config --cflags nlohmann_json)
 SFML_PREFIX = $(shell brew --prefix sfml@2 2>/dev/null)
 SFML_PKG_CONFIG_PATH = $(if $(SFML_PREFIX),$(SFML_PREFIX)/lib/pkgconfig,)
@@ -15,21 +29,42 @@ SFML_LIBS = $(shell PKG_CONFIG_PATH="$(SFML_PKG_CONFIG_PATH):$$PKG_CONFIG_PATH" 
 
 .PHONY: build client server test clean
 
-build: client
+build: server client
 
-client:
+client: $(BUILD_DIR)/minesweeper-desktop
+
+$(BUILD_DIR)/minesweeper-desktop: src/app/desktop_main.cpp $(GAME_SOURCES) $(UI_SOURCES)
+	mkdir -p $(dir $@)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SFML_CFLAGS) \
-		src/client_main.cpp $(CORE_SOURCES) $(CLIENT_SOURCES) \
-		$(SFML_LIBS) -o minesweeper-client
+		$^ $(SFML_LIBS) -o $@
 
-server:
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(JSON_CFLAGS) src/server_main.cpp $(CORE_SOURCES) $(SERVER_SOURCES) \
-		-pthread -o minesweeper-server
+server: $(BUILD_DIR)/minesweeper-server
 
-test:
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(JSON_CFLAGS) tests/server_test.cpp $(CORE_SOURCES) $(SERVER_SOURCES) \
-		-pthread -o minesweeper-server-test
-	./minesweeper-server-test
+$(BUILD_DIR)/minesweeper-server: src/app/server_main.cpp $(SERVER_SOURCES)
+	mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(JSON_CFLAGS) $^ -pthread -o $@
+
+test: $(TEST_BINARIES)
+	@for test_binary in $(TEST_BINARIES); do \
+		"$$test_binary" || exit 1; \
+	done
+
+$(BUILD_DIR)/tests/game_test: tests/game_test.cpp $(GAME_SOURCES)
+	mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
+
+$(BUILD_DIR)/tests/protocol_test: tests/protocol_test.cpp src/protocol.cpp
+	mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ -o $@
+
+$(BUILD_DIR)/tests/game_state_file_test: \
+		tests/game_state_file_test.cpp $(RUNTIME_SOURCES)
+	mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(JSON_CFLAGS) $^ -o $@
+
+$(BUILD_DIR)/tests/runtime_test: tests/runtime_test.cpp $(RUNTIME_SOURCES)
+	mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(JSON_CFLAGS) $^ -o $@
 
 clean:
-	rm -f minesweeper-client minesweeper-server minesweeper-server-test
+	rm -rf $(BUILD_DIR)

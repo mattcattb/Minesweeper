@@ -1,0 +1,28 @@
+{
+  "configurations": [
+    {
+      "name": "macOS",
+      "compilerPath": "/usr/bin/clang++",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "macos-clang-arm64",
+      "includePath": [
+        "${workspaceFolder}/src",
+        "/opt/homebrew/include",
+        "/opt/homebrew/opt/sfml@2/include",
+        "/opt/homebrew/opt/freetype/include/freetype2",
+        "/opt/homebrew/opt/libpng/include/libpng16"
+      ]
+    },
+    {
+      "name": "Linux",
+      "compilerPath": "/usr/bin/g++",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "linux-gcc-x64",
+      "includePath": [
+        "${workspaceFolder}/src",
+        "/usr/include"
+      ]
+    }
+  ],
+  "version": 4
+}
