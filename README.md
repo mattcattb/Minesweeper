@@ -125,10 +125,10 @@ Build and run the headless runtime with a persistent data volume:
 ```bash
 docker build \
   --build-arg VERSION=0.2.0 \
-  -t mattcattb/minesweeper:0.2.0 \
-  -t mattcattb/minesweeper:latest \
+  -t mattbou12/minesweeper:0.2.0 \
+  -t mattbou12/minesweeper:latest \
   .
-docker run --rm -v minesweeper-data:/data mattcattb/minesweeper:latest
+docker run --rm -v minesweeper-data:/data mattbou12/minesweeper:latest
 ```
 
 Publish the same version for AMD64 and ARM64:
@@ -137,8 +137,8 @@ Publish the same version for AMD64 and ARM64:
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
   --build-arg VERSION=0.2.0 \
-  -t mattcattb/minesweeper:0.2.0 \
-  -t mattcattb/minesweeper:latest \
+  -t mattbou12/minesweeper:0.2.0 \
+  -t mattbou12/minesweeper:latest \
   --push .
 ```
 
